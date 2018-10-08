@@ -3,6 +3,7 @@
 
 <head>
     <title>Level Maker - p2.js physics engine</title>
+    <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.js"></script>
     <script src="js/p2.js"></script>
     <script src="js/p2.renderer.js"></script>
     <script src="js/lodash.min.js"></script>
@@ -30,47 +31,47 @@
             world.solver.iterations = N;
 
             var e = new p2.Box({
-                width: 6.4,
-                height: 1
+                width: 7.2,
+                height: 0.6
             });
             upOneWall = new p2.Body({
                 mass: 0,
-                position: [3.2, 0.5],
+                position: [3.6, 0.3],
             });
             upOneWall.addShape(e);
             world.addBody(upOneWall);
 
             var a = new p2.Box({
-                width: 6.4,
-                height: 1
+                width: 7.2,
+                height: 0.6
             });
             downOneWall = new p2.Body({
                 mass: 0,
-                position: [3.2, 11.36]
+                position: [3.6, 11.00]
             });
             downOneWall.addShape(a);
             world.addBody(downOneWall);
 
             //leftWall
             var n = new p2.Box({
-                width: 1,
-                height: 11.36
+                width: 0.4,
+                height: 11.00
             });
             leftWall = new p2.Body({
                 mass: 0,
-                position: [0.5, 11.36 / 2]
+                position: [0.2, 11.00 / 2]
             });
             leftWall.displays = [];
             leftWall.addShape(n);
             this.world.addBody(leftWall);
 
             var d = new p2.Box({
-                width: 1,
-                height: 11.36
+                width: 0.4,
+                height: 11.00
             });
             rightWall = new p2.Body({
                 mass: 0,
-                position: [5.9, 11.36 / 2]
+                position: [7.0, 11.00 / 2]
             });
             rightWall.addShape(d);
             this.world.addBody(rightWall);

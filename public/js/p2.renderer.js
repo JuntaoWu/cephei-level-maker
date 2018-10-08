@@ -15526,7 +15526,11 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
 
         this.scenes = scenes;
 
+        this.loadScenes();
+
         this.state = Renderer.DEFAULT;
+
+        this.bodyType = Renderer.TYPE_DEFAULT;
 
         this.typedBodies = {};
 
@@ -15725,10 +15729,10 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
     });
 
     Object.defineProperty(Renderer.prototype, 'fixedRotation', {
-        get: function() {
+        get: function () {
             return this.settings['fixedRotation [x]'];
         },
-        set: function(value) {
+        set: function (value) {
             this.settings['fixedRotation [x]'] = value;
             this.updateGUI();
             this.bodies.forEach(body => {
@@ -15740,6 +15744,65 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
             });
         }
     });
+
+    Renderer.prototype.loadScenes = function () {
+        let that = this;
+        let token = localStorage.getItem("token");
+        $.ajax({
+            url: `/level/?token=${token}`
+        }).then(res => {
+            if (res.error) {
+                return;
+            }
+            let data = res.data || [];
+            data.forEach((scene, index) => {
+
+                let sceneName = `scene${index + 1}`;
+
+                this.scenes[sceneName] = {
+                    setup: () => {
+                        that.scenes.default && that.scenes.default.setup && that.scenes.default.setup.call(that);
+                        ((scene.balls || []).concat(scene.cueBalls || []).concat(scene.holes || [])).forEach(ball => {
+                            let b = new p2.Body({ mass: 1, position: [parseFloat(ball.x), parseFloat(ball.y)], fixedRotation: true });
+                            var circle = new p2.Circle({ radius: parseFloat(ball.width) / 2 });
+                            b.addShape(circle);
+                            that.world.addBody(b);
+                        });
+                        (scene.walls || []).forEach(wall => {
+                            let b = new p2.Body({
+                                mass: 1,
+                                position: [parseFloat(wall.x), parseFloat(wall.y)]
+                            });
+                            var rectangleShape = new p2.Box({ width: parseFloat(wall.width), height: parseFloat(wall.height) });
+                            b.addShape(rectangleShape);
+                            that.world.addBody(b);
+                        });
+                    }
+                };
+            });
+
+            var sceneFolder = this.gui.__folders.Scenes;
+
+            var that = this;
+    
+            // Add scenes
+            var i = 2;
+            for (let name in this.scenes) {
+ 
+                if(name == "default") {
+                    continue;
+                }
+
+                var guiLabel = name + ' [' + (i++) + ']';
+                this.settings[guiLabel] = function () {
+                    console.log(name);
+                    that.setScene(that.scenes[name]);
+                };
+                sceneFolder.add(this.settings, guiLabel);
+            }
+
+        });
+    };
 
     Renderer.prototype.getDevicePixelRatio = function () {
         return window.devicePixelRatio || 1;
@@ -15789,7 +15852,7 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
             that.setType(parseInt(type));
         });
         gui.add(settings, 'fullscreen');
-        
+
         // World folder
         var worldFolder = gui.addFolder('World');
         worldFolder.open();
@@ -15997,6 +16060,20 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
                 });
             }
         };
+
+        let token = localStorage.getItem("token");
+
+        $.ajax({
+            url: `/level/?token=${token}`,
+            method: 'POST',
+            data: wip
+        }).then(res => {
+            if(res.error) {
+                console.error(res.error);
+                return;
+            }
+            console.log(res.message);
+        });
     };
 
     /**
@@ -16006,6 +16083,7 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
      * @param {function} [sceneDefinition.teardown]
      */
     Renderer.prototype.setScene = function (sceneDefinition) {
+        console.log(sceneDefinition);
         if (typeof (sceneDefinition) === 'string') {
             sceneDefinition = this.scenes[sceneDefinition];
         }
@@ -16198,7 +16276,7 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
      * @param {number} state
      */
     Renderer.prototype.setType = function (type) {
-        this.type = type;
+        this.bodyType = type;
         this.typeChangeEvent.state = type;
         this.emit(this.typeChangeEvent);
         if (Renderer.stateTypeMap[type]) {
@@ -16363,10 +16441,10 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
                     b = new p2.Body({ mass: 1, position: this.drawCircleCenter, fixedRotation: true });
                     var circle = new p2.Circle({ radius: R });
                     b.addShape(circle);
-                    
+
                     this.world.addBody(b);
                     console.log("DRAWINGCIRCLE", b.id);
-                    this.typedBodies[b.id] = this.type;
+                    this.typedBodies[b.id] = this.bodyType;
                 }
                 p2.vec2.copy(this.drawCircleCenter, this.drawCirclePoint);
                 this.emit(this.drawCircleChangeEvent);
@@ -16397,7 +16475,7 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
                     b.addShape(rectangleShape);
                     this.world.addBody(b);
                     console.log("DRAWINGRECTANGLE", b.id);
-                    this.typedBodies[b.id] = this.type;
+                    this.typedBodies[b.id] = this.bodyType;
                 }
                 p2.vec2.copy(this.drawRectEnd, this.drawRectStart);
                 this.emit(this.drawRectangleChangeEvent);
