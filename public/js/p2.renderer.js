@@ -15594,7 +15594,7 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
             maxSubSteps: 3,
             gravityX: 0,
             gravityY: -10,
-            sleepMode: p2.World.NO_SLEEPING,
+            sleepMode: p2.World.BODY_SLEEPING,
 
             'drawContacts [c]': false,
             'drawAABBs [t]': false,
@@ -15659,7 +15659,6 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
 
     Renderer.toolStateMap = {
         'pick/pan [q]': Renderer.DEFAULT,
-        'polygon [d]': Renderer.DRAWPOLYGON,
         'circle [a]': Renderer.DRAWCIRCLE,
         'rectangle [f]': Renderer.DRAWRECTANGLE
     };
@@ -16043,6 +16042,11 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
         };
 
         bodies.forEach(body => {
+
+            if(body.aabb.upperBound[0] < 0 || body.aabb.lowerBound[0] > 7.2 || body.aabb.upperBound[1] < 0 || body.aabb.lowerBound[1] > 11.00) {
+                return;
+            }
+
             let type = this.typedBodies[body.id];
             switch (type) {
                 case Renderer.TYPE_DEFAULT:

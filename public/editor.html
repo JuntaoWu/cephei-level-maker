@@ -2,7 +2,7 @@
 <html>
 
 <head>
-    <title>Level Maker - p2.js physics engine</title>
+    <title>Level Maker - your name</title>
     <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.js"></script>
     <script src="js/p2.js"></script>
     <script src="js/p2.renderer.js"></script>
@@ -15,6 +15,8 @@
 
 <body>
     <script>
+
+        document.querySelector("title").innerHTML = `Level Maker - ${localStorage.getItem("username")}`;
 
         var N = 10,  // Number of circles
             r = 0.1; // circle radius
@@ -47,7 +49,7 @@
             });
             downOneWall = new p2.Body({
                 mass: 0,
-                position: [3.6, 11.00]
+                position: [3.6, 10.70]
             });
             downOneWall.addShape(a);
             world.addBody(downOneWall);
@@ -75,6 +77,19 @@
             });
             rightWall.addShape(d);
             this.world.addBody(rightWall);
+
+            var wallShape = new p2.Box({
+                width: 6.4,
+                height: 2.8
+            });
+            var wallBody = new p2.Body({
+                position: [3.6, 2]
+            });
+            wallBody.displays = [];
+            wallBody.addShape(wallShape);
+            wallShape.collisionGroup = 0;
+            wallShape.collisionMask = 0;
+            this.world.addBody(wallBody);
 
             this.frame(0, 0, 8, 8);
         });

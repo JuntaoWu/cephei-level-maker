@@ -14,6 +14,7 @@
                 if (res.error) {
                     alert("Error:", res.message);
                 }
+                localStorage.setItem("username", res.data.username);
                 localStorage.setItem("token", res.data.token);
                 location.href = '/editor.html';
             }).catch(error => {
