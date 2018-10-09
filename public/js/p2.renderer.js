@@ -15588,6 +15588,8 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
             'fixedRotation [x]': false,
             'paused [p]': false,
             'manualStep [s]': function () { that.world.step(that.world.lastTimeStep); },
+            width: 10,
+            height: 10,
             fps: 60,
             maxSubSteps: 3,
             gravityX: 0,
@@ -15784,12 +15786,12 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
             var sceneFolder = this.gui.__folders.Scenes;
 
             var that = this;
-    
+
             // Add scenes
             var i = 2;
             for (let name in this.scenes) {
- 
-                if(name == "default") {
+
+                if (name == "default") {
                     continue;
                 }
 
@@ -15852,6 +15854,57 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
             that.setType(parseInt(type));
         });
         gui.add(settings, 'fullscreen');
+
+        //Current Folder
+        var currentFolder = gui.addFolder('current');
+        currentFolder.open();
+        currentFolder.add(settings, 'width', 10, 300).step(10).onChange(function (width) {
+            if (that.currentBody) {
+                console.log(that.currentBody.shapes[0].radius, that.currentBody.shapes[0].width, that.currentBody.shapes[0].height);
+                console.log(that.currentBody.aabb);
+                if(that.currentBody.shapes[0].radius) {
+                    that.currentBody.shapes[0].radius = width / 100 / 2;
+                    that.settings.height = width;
+                }
+                else {
+                    that.currentBody.shapes[0].width = width / 100;
+                    var verts = [
+                        p2.vec2.fromValues(-width/2 / 100, -that.currentBody.shapes[0].height /2),
+                        p2.vec2.fromValues( width/2 / 100, -that.currentBody.shapes[0].height /2),
+                        p2.vec2.fromValues( width/2 / 100,  that.currentBody.shapes[0].height /2),
+                        p2.vec2.fromValues(-width/2 / 100,  that.currentBody.shapes[0].height /2)
+                    ];
+                    that.currentBody.shapes[0].vertices = verts;
+                }
+
+                that.currentBody.aabbNeedsUpdate = true;
+                that.currentBody.updateAABB();
+                that.currentBody.sleepState = that.currentBody.sleepState == p2.Body.SLEEPING ? 0 : p2.Body.SLEEPING;
+            }
+        });
+        currentFolder.add(settings, 'height', 10, 300).step(10).onChange(function (height) {
+            if (that.currentBody) {
+                console.log(that.currentBody.shapes[0].radius, that.currentBody.shapes[0].width, that.currentBody.shapes[0].height);
+                console.log(that.currentBody.aabb);
+                if(that.currentBody.shapes[0].radius) {
+                    that.currentBody.shapes[0].radius = height / 100 / 2;
+                    that.settings.width = height;
+                }
+                else {
+                    that.currentBody.shapes[0].height = height / 100;
+                    var verts = [
+                        p2.vec2.fromValues(-that.currentBody.shapes[0].width/2, -height /2 / 100),
+                        p2.vec2.fromValues( that.currentBody.shapes[0].width/2, -height /2 / 100),
+                        p2.vec2.fromValues( that.currentBody.shapes[0].width/2,  height /2 / 100),
+                        p2.vec2.fromValues(-that.currentBody.shapes[0].width/2,  height /2 / 100)
+                    ];
+                    that.currentBody.shapes[0].vertices = verts;
+                }
+                that.currentBody.aabbNeedsUpdate = true;
+                that.currentBody.updateAABB();
+                that.currentBody.sleepState = that.currentBody.sleepState == p2.Body.SLEEPING ? 0 : p2.Body.SLEEPING;
+            }
+        });
 
         // World folder
         var worldFolder = gui.addFolder('World');
@@ -16068,7 +16121,7 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
             method: 'POST',
             data: wip
         }).then(res => {
-            if(res.error) {
+            if (res.error) {
                 console.error(res.error);
                 return;
             }
@@ -16306,8 +16359,11 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
                         break;
                     }
                 }
-
+                //todo: select current object body.
                 if (b) {
+                    this.currentBody = b;
+                    this.settings.width = b.shapes[0].radius ? b.shapes[0].radius * 2 * 100 : b.shapes[0].width * 100;
+                    this.settings.height = b.shapes[0].radius ? b.shapes[0].radius * 2 * 100 : b.shapes[0].height * 100;
                     b.wakeUp();
                     this.setState(Renderer.DRAGGING);
                     // Add mouse joint to the body
