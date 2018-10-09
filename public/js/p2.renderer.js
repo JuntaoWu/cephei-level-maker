@@ -15576,6 +15576,7 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
         this.addedGlobals = [];
 
         this.settings = {
+            scene: 'default',
             tool: Renderer.DEFAULT,
             type: Renderer.TYPE_DEFAULT,
             fullscreen: function () {
@@ -15604,15 +15605,20 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
             stiffness: 1000000,
             relaxation: 4,
             tolerance: 0.0001,
-            save: function () {
-                that.saveScene();
+            clone: function () {
+                let currentIndexBeforeInsert = _(that.scenes).keys().value().length;
+                that.cloneScene();
                 let currentIndex = _(that.scenes).keys().value().length;
                 let sceneName = `scene${currentIndex}`;
-                let guiLabel = currentIndex <= 9 ? `sceneName [${currentIndex}]` : sceneName;
+                let guiLabel = currentIndex <= 9 ? `${sceneName} [${currentIndex}]` : sceneName;
                 that.settings[guiLabel] = function () {
-                    that.setScene(that.scenes[sceneName]);
+                    that.setScene(that.scenes[sceneName], sceneName);
                 };
                 that.gui.__folders.Scenes.add(that.settings, guiLabel);
+                that.setSceneByIndex(currentIndexBeforeInsert);
+            },
+            save: function () {
+                that.saveScene();
             }
         };
 
@@ -15758,9 +15764,10 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
             let data = res.data || [];
             data.forEach((scene, index) => {
 
-                let sceneName = `scene${index + 1}`;
+                let sceneName = `scene${index + 2}`;
 
                 this.scenes[sceneName] = {
+                    id: scene._id,
                     setup: () => {
                         that.scenes.default && that.scenes.default.setup && that.scenes.default.setup.call(that);
                         ((scene.balls || []).concat(scene.cueBalls || []).concat(scene.holes || [])).forEach(ball => {
@@ -15768,6 +15775,7 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
                             var circle = new p2.Circle({ radius: parseFloat(ball.width) / 2 });
                             b.addShape(circle);
                             that.world.addBody(b);
+                            that.typedBodies[b.id] = ball.bodyType;
                         });
                         (scene.walls || []).forEach(wall => {
                             let b = new p2.Body({
@@ -15775,8 +15783,10 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
                                 position: [parseFloat(wall.x), parseFloat(wall.y)]
                             });
                             var rectangleShape = new p2.Box({ width: parseFloat(wall.width), height: parseFloat(wall.height) });
+                            b.angle = parseFloat(wall.angle);
                             b.addShape(rectangleShape);
                             that.world.addBody(b);
+                            that.typedBodies[b.id] = wall.bodyType;
                         });
                     }
                 };
@@ -15797,7 +15807,7 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
                 var guiLabel = name + ' [' + (i++) + ']';
                 this.settings[guiLabel] = function () {
                     console.log(name);
-                    that.setScene(that.scenes[name]);
+                    that.setScene(that.scenes[name], name);
                 };
                 sceneFolder.add(this.settings, guiLabel);
             }
@@ -15846,6 +15856,8 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
 
         var settings = this.settings;
 
+        gui.add(settings, 'scene');
+
         gui.add(settings, 'tool', Renderer.toolStateMap).onChange(function (state) {
             that.setState(parseInt(state));
         });
@@ -15861,17 +15873,17 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
             if (that.currentBody) {
                 console.log(that.currentBody.shapes[0].radius, that.currentBody.shapes[0].width, that.currentBody.shapes[0].height);
                 console.log(that.currentBody.aabb);
-                if(that.currentBody.shapes[0].radius) {
+                if (that.currentBody.shapes[0].radius) {
                     that.currentBody.shapes[0].radius = width / 100 / 2;
                     that.settings.height = width;
                 }
                 else {
                     that.currentBody.shapes[0].width = width / 100;
                     var verts = [
-                        p2.vec2.fromValues(-width/2 / 100, -that.currentBody.shapes[0].height /2),
-                        p2.vec2.fromValues( width/2 / 100, -that.currentBody.shapes[0].height /2),
-                        p2.vec2.fromValues( width/2 / 100,  that.currentBody.shapes[0].height /2),
-                        p2.vec2.fromValues(-width/2 / 100,  that.currentBody.shapes[0].height /2)
+                        p2.vec2.fromValues(-width / 2 / 100, -that.currentBody.shapes[0].height / 2),
+                        p2.vec2.fromValues(width / 2 / 100, -that.currentBody.shapes[0].height / 2),
+                        p2.vec2.fromValues(width / 2 / 100, that.currentBody.shapes[0].height / 2),
+                        p2.vec2.fromValues(-width / 2 / 100, that.currentBody.shapes[0].height / 2)
                     ];
                     that.currentBody.shapes[0].vertices = verts;
                 }
@@ -15885,17 +15897,17 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
             if (that.currentBody) {
                 console.log(that.currentBody.shapes[0].radius, that.currentBody.shapes[0].width, that.currentBody.shapes[0].height);
                 console.log(that.currentBody.aabb);
-                if(that.currentBody.shapes[0].radius) {
+                if (that.currentBody.shapes[0].radius) {
                     that.currentBody.shapes[0].radius = height / 100 / 2;
                     that.settings.width = height;
                 }
                 else {
                     that.currentBody.shapes[0].height = height / 100;
                     var verts = [
-                        p2.vec2.fromValues(-that.currentBody.shapes[0].width/2, -height /2 / 100),
-                        p2.vec2.fromValues( that.currentBody.shapes[0].width/2, -height /2 / 100),
-                        p2.vec2.fromValues( that.currentBody.shapes[0].width/2,  height /2 / 100),
-                        p2.vec2.fromValues(-that.currentBody.shapes[0].width/2,  height /2 / 100)
+                        p2.vec2.fromValues(-that.currentBody.shapes[0].width / 2, -height / 2 / 100),
+                        p2.vec2.fromValues(that.currentBody.shapes[0].width / 2, -height / 2 / 100),
+                        p2.vec2.fromValues(that.currentBody.shapes[0].width / 2, height / 2 / 100),
+                        p2.vec2.fromValues(-that.currentBody.shapes[0].width / 2, height / 2 / 100)
                     ];
                     that.currentBody.shapes[0].vertices = verts;
                 }
@@ -15972,11 +15984,12 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
         for (var sceneName in this.scenes) {
             var guiLabel = sceneName + ' [' + (i++) + ']';
             this.settings[guiLabel] = function () {
-                that.setScene(that.scenes[sceneName]);
+                that.setScene(that.scenes[sceneName], sceneName);
             };
             sceneFolder.add(settings, guiLabel);
         }
 
+        gui.add(settings, 'clone');
         gui.add(settings, 'save');
     };
 
@@ -16021,7 +16034,7 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
         });
     };
 
-    Renderer.prototype.saveScene = function () {
+    Renderer.prototype.cloneScene = function () {
         let bodies = this.bodies.slice();
         let wip = {
             "balls": [
@@ -16043,12 +16056,12 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
 
         bodies.forEach(body => {
 
-            if(body.aabb.upperBound[0] < 0 || body.aabb.lowerBound[0] > 7.2 || body.aabb.upperBound[1] < 0 || body.aabb.lowerBound[1] > 11.00) {
+            if (body.aabb.upperBound[0] < 0 || body.aabb.lowerBound[0] > 7.2 || body.aabb.upperBound[1] < 0 || body.aabb.lowerBound[1] > 11.00) {
                 return;
             }
 
             let type = this.typedBodies[body.id];
-            switch (type) {
+            switch (+type) {
                 case Renderer.TYPE_DEFAULT:
                     wip.holes.push({
                         width: parseFloat((body.aabb.upperBound[0] - body.aabb.lowerBound[0]).toFixed(2)),
@@ -16113,7 +16126,113 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
             setup: () => {
                 this.scenes.default && this.scenes.default.setup && this.scenes.default.setup.call(this);
                 bodies.forEach(body => {
-                    this.world.addBody(body);
+                    let type = this.typedBodies[body.id];
+                    type && this.world.addBody(body);
+                });
+            }
+        };
+    };
+
+    Renderer.prototype.saveScene = function () {
+        let bodies = this.bodies.slice();
+        let wip = {
+            "balls": [
+
+            ],
+            "walls": [
+
+            ],
+            "cueBalls": [
+
+            ],
+            "holes": [
+
+            ],
+            "fixedWalls": [
+
+            ]
+        };
+
+        bodies.forEach(body => {
+
+            if (body.aabb.upperBound[0] < 0 || body.aabb.lowerBound[0] > 7.2 || body.aabb.upperBound[1] < 0 || body.aabb.lowerBound[1] > 11.00) {
+                return;
+            }
+
+            let type = this.typedBodies[body.id];
+            switch (+type) {
+                case Renderer.TYPE_DEFAULT:
+                    wip.holes.push({
+                        width: parseFloat((body.aabb.upperBound[0] - body.aabb.lowerBound[0]).toFixed(2)),
+                        height: parseFloat((body.aabb.upperBound[1] - body.aabb.lowerBound[1]).toFixed(2)),
+                        x: parseFloat(((body.aabb.upperBound[0] + body.aabb.lowerBound[0]) / 2).toFixed(2)),
+                        y: parseFloat(((body.aabb.upperBound[1] + body.aabb.lowerBound[1]) / 2).toFixed(2)),
+                        bodyType: type,
+                    });
+                    break;
+                case Renderer.TYPE_WALL:
+                case Renderer.TYPE_ATTACK_WALL:
+                case Renderer.TYPE_MOVING_WALL:
+                    let wallType = "";
+                    switch (type) {
+                        case Renderer.TYPE_ATTACK_WALL:
+                            wallType = "attack";
+                            break;
+                        case Renderer.TYPE_MOVING_WALL:
+                            wallType = "moving";
+                            break;
+                    }
+                    wip.walls.push({
+                        width: parseFloat((body.shapes[0].radius || body.shapes[0].width).toFixed(2)),
+                        height: parseFloat((body.shapes[0].radius || body.shapes[0].height).toFixed(2)),
+                        x: parseFloat(body.position[0].toFixed(2)),
+                        y: parseFloat(body.position[1].toFixed(2)),
+                        angle: parseFloat(body.angle),
+                        type: wallType,
+                        bodyType: type,
+                    });
+                    break;
+                case Renderer.TYPE_HERO:
+                    wip.cueBalls.push({
+                        width: parseFloat((body.aabb.upperBound[0] - body.aabb.lowerBound[0]).toFixed(2)),
+                        height: parseFloat((body.aabb.upperBound[1] - body.aabb.lowerBound[1]).toFixed(2)),
+                        x: parseFloat(((body.aabb.upperBound[0] + body.aabb.lowerBound[0]) / 2).toFixed(2)),
+                        y: parseFloat(((body.aabb.upperBound[1] + body.aabb.lowerBound[1]) / 2).toFixed(2)),
+                        type: "hero",
+                        bodyType: type,
+                    });
+                    break;
+                case Renderer.TYPE_ENEMY:
+                    wip.balls.push({
+                        width: parseFloat((body.aabb.upperBound[0] - body.aabb.lowerBound[0]).toFixed(2)),
+                        height: parseFloat((body.aabb.upperBound[1] - body.aabb.lowerBound[1]).toFixed(2)),
+                        x: parseFloat(((body.aabb.upperBound[0] + body.aabb.lowerBound[0]) / 2).toFixed(2)),
+                        y: parseFloat(((body.aabb.upperBound[1] + body.aabb.lowerBound[1]) / 2).toFixed(2)),
+                        type: "enemy",
+                        bodyType: type,
+                    });
+                    break;
+                default:
+                    wip.fixedWalls.push({
+                        width: parseFloat((body.aabb.upperBound[0] - body.aabb.lowerBound[0]).toFixed(2)),
+                        height: parseFloat((body.aabb.upperBound[1] - body.aabb.lowerBound[1]).toFixed(2)),
+                        x: parseFloat(((body.aabb.upperBound[0] + body.aabb.lowerBound[0]) / 2).toFixed(2)),
+                        y: parseFloat(((body.aabb.upperBound[1] + body.aabb.lowerBound[1]) / 2).toFixed(2)),
+                        bodyType: type,
+                    });
+                    break;
+            }
+        });
+        let sceneName = this.settings.scene;
+        localStorage.setItem(sceneName, JSON.stringify(wip));
+
+        this.scenes[sceneName] = {
+            id: this.scenes[sceneName] && this.scenes[sceneName].id,
+            setup: () => {
+                this.scenes.default && this.scenes.default.setup && this.scenes.default.setup.call(this);
+                bodies.forEach(body => {
+                    let type = this.typedBodies[body.id];
+                    type && this.world.addBody(body);
                 });
             }
         };
@@ -16121,7 +16240,7 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
         let token = localStorage.getItem("token");
 
         $.ajax({
-            url: `/level/?token=${token}`,
+            url: `/level/?token=${token}&id=${this.scenes[sceneName] && this.scenes[sceneName].id || ""}`,
             method: 'POST',
             data: wip
         }).then(res => {
@@ -16139,7 +16258,7 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
      * @param {function} sceneDefinition.setup
      * @param {function} [sceneDefinition.teardown]
      */
-    Renderer.prototype.setScene = function (sceneDefinition) {
+    Renderer.prototype.setScene = function (sceneDefinition, name) {
         console.log(sceneDefinition);
         if (typeof (sceneDefinition) === 'string') {
             sceneDefinition = this.scenes[sceneDefinition];
@@ -16192,6 +16311,7 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
         settings.gravityX = this.world.gravity[0];
         settings.gravityY = this.world.gravity[1];
         settings.sleepMode = this.world.sleepMode;
+        settings.scene = name || settings.scene;
         this.updateGUI();
     };
 
@@ -16203,7 +16323,7 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
         var i = 0;
         for (var key in this.scenes) {
             if (i === index) {
-                this.setScene(this.scenes[key]);
+                this.setScene(this.scenes[key], key);
                 break;
             }
             i++;

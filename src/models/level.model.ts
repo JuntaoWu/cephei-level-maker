@@ -7,6 +7,8 @@ class GameObjectInfo {
     public x: number;
     public y: number;
     public type: string;
+    public bodyType: number;
+    public angle: number;
 }
 
 /**

@@ -84,21 +84,36 @@ export let json = async (req, res, next) => {
  */
 export let create = async (req, res, next) => {
     try {
-        let user = req.user;
-        if (!user) {
+        if (req.query.id) {
+            let level = await LevelModel.findById(req.query.id);
+            level.balls = req.body.balls;
+            level.cueBalls = req.body.cueBalls;
+            level.holes = req.body.holes;
+            level.walls = req.body.walls;
+            let savedLevel = await level.save();
             return res.json({
-                error: true,
-                message: "Please login to save level",
+                error: false,
+                message: "OK",
+                data: savedLevel
             });
         }
-        let level = new LevelModel(req.body);
-        level.createdBy = user.username;
-        let savedLevel = await level.save();
-        return res.json({
-            error: false,
-            message: "OK",
-            data: savedLevel
-        });
+        else {
+            let user = req.user;
+            if (!user) {
+                return res.json({
+                    error: true,
+                    message: "Please login to save level",
+                });
+            }
+            let level = new LevelModel(req.body);
+            level.createdBy = user.username;
+            let savedLevel = await level.save();
+            return res.json({
+                error: false,
+                message: "OK",
+                data: savedLevel
+            });
+        }
     }
     catch (ex) {
         console.error(ex);
