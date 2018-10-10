@@ -15610,7 +15610,7 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
                 that.cloneScene();
                 let currentIndex = _(that.scenes).keys().value().length;
                 let sceneName = `scene${currentIndex}`;
-                let guiLabel = currentIndex <= 9 ? `${sceneName} [${currentIndex}]` : sceneName;
+                let guiLabel = sceneName;
                 that.settings[guiLabel] = function () {
                     that.setScene(that.scenes[sceneName], sceneName);
                 };
@@ -15619,6 +15619,9 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
             },
             save: function () {
                 that.saveScene();
+            },
+            remove: function() {
+                that.removeScene();
             }
         };
 
@@ -15991,6 +15994,7 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
 
         gui.add(settings, 'clone');
         gui.add(settings, 'save');
+        gui.add(settings, 'remove');
     };
 
     /**
@@ -16249,8 +16253,31 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
                 return;
             }
             console.log(res.message);
+            this.scenes[sceneName].id = res.data._id;
         });
     };
+
+    Renderer.prototype.removeScene = function() {
+        let sceneName = this.settings.scene;
+
+        let token = localStorage.getItem("token");
+        $.ajax({
+            url: `/level/?token=${token}&id=${this.scenes[sceneName] && this.scenes[sceneName].id || ""}`,
+            method: 'DELETE',
+        }).then(res => {
+            if (res.error) {
+                console.error(res.error);
+                return;
+            }
+            console.log(res.message);
+
+            let controllerToBeRemoved = this.gui.__folders.Scenes.__controllers.filter(controller => {
+                return controller.property == sceneName;
+            });
+            this.gui.__folders["Scenes"].remove(controllerToBeRemoved[0]);
+            delete this.scenes[sceneName];
+        });
+    }
 
     /**
      * Sets the current scene to the scene definition given.

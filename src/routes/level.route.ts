@@ -10,6 +10,7 @@ const router = express.Router(); // eslint-disable-line new-cap
 
 router.route('/')
     .get(passport.authenticate("jwt"), levelCtrl.list)
-    .post(passport.authenticate("jwt"), levelCtrl.create);
+    .post(passport.authenticate("jwt"), levelCtrl.create)
+    .delete(passport.authenticate("jwt"), levelCtrl.remove);
 
 export default router;
