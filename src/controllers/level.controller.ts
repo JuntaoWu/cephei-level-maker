@@ -87,7 +87,6 @@ export let create = async (req, res, next) => {
         if (req.query.id) {
             let level = await LevelModel.findById(req.query.id);
             level.balls = req.body.balls;
-            level.cueBalls = req.body.cueBalls;
             level.holes = req.body.holes;
             level.walls = req.body.walls;
             let savedLevel = await level.save();

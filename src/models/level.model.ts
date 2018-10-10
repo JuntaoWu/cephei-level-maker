@@ -6,7 +6,6 @@ class GameObjectInfo {
     public height: number;
     public x: number;
     public y: number;
-    public type: string;
     public bodyType: number;
     public angle: number;
 }
@@ -19,8 +18,6 @@ export class Level extends Typegoose {
   public balls?: Array<GameObjectInfo>;
   @prop()
   public walls?: Array<GameObjectInfo>;
-  @prop()
-  public cueBalls?: Array<GameObjectInfo>;
   @prop()
   public holes?: Array<GameObjectInfo>;
   @prop()

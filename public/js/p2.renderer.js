@@ -15530,7 +15530,7 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
 
         this.state = Renderer.DEFAULT;
 
-        this.bodyType = Renderer.TYPE_DEFAULT;
+        this.bodyType = Renderer.TYPE_HOLE;
 
         this.typedBodies = {};
 
@@ -15578,7 +15578,7 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
         this.settings = {
             scene: 'default',
             tool: Renderer.DEFAULT,
-            type: Renderer.TYPE_DEFAULT,
+            type: Renderer.TYPE_HOLE,
             fullscreen: function () {
                 var el = document.body;
                 var requestFullscreen = el.requestFullscreen || el.msRequestFullscreen || el.mozRequestFullScreen || el.webkitRequestFullscreen;
@@ -15620,7 +15620,7 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
             save: function () {
                 that.saveScene();
             },
-            remove: function() {
+            remove: function () {
                 that.removeScene();
             }
         };
@@ -15676,20 +15676,22 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
         Renderer.stateToolMap[Renderer.toolStateMap[key]] = key;
     }
 
-    Renderer.TYPE_DEFAULT = 1;
-    Renderer.TYPE_WALL = 2;
+    Renderer.TYPE_HOLE = 1;
+    Renderer.TYPE_STATIC_WALL = 2;
     Renderer.TYPE_ATTACK_WALL = 3;
     Renderer.TYPE_MOVING_WALL = 4;
     Renderer.TYPE_ENEMY = 5;
     Renderer.TYPE_HERO = 6;
+    Renderer.TYPE_MASS = 7;
 
     Renderer.typeStateMap = {
-        'hole [x]': Renderer.TYPE_DEFAULT,
-        'wall [i]': Renderer.TYPE_WALL,
-        'attack wall [a]': Renderer.TYPE_ATTACK_WALL,
-        'moving wall [f]': Renderer.TYPE_MOVING_WALL,
+        'hole': Renderer.TYPE_HOLE,
+        'static wall': Renderer.TYPE_STATIC_WALL,
+        'attack wall': Renderer.TYPE_ATTACK_WALL,
+        'moving wall': Renderer.TYPE_MOVING_WALL,
         'enemy': Renderer.TYPE_ENEMY,
-        'hero': Renderer.TYPE_HERO
+        'hero': Renderer.TYPE_HERO,
+        'mass': Renderer.TYPE_MASS,
     };
     Renderer.stateTypeMap = {};
     for (var key in Renderer.typeStateMap) {
@@ -15773,7 +15775,7 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
                     id: scene._id,
                     setup: () => {
                         that.scenes.default && that.scenes.default.setup && that.scenes.default.setup.call(that);
-                        ((scene.balls || []).concat(scene.cueBalls || []).concat(scene.holes || [])).forEach(ball => {
+                        ((scene.balls || []).concat(scene.holes || [])).forEach(ball => {
                             let b = new p2.Body({ mass: 1, position: [parseFloat(ball.x), parseFloat(ball.y)], fixedRotation: true });
                             var circle = new p2.Circle({ radius: parseFloat(ball.width) / 2 });
                             b.addShape(circle);
@@ -15807,7 +15809,7 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
                     continue;
                 }
 
-                var guiLabel = name + ' [' + (i++) + ']';
+                var guiLabel = name;
                 this.settings[guiLabel] = function () {
                     console.log(name);
                     that.setScene(that.scenes[name], name);
@@ -16040,91 +16042,8 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
 
     Renderer.prototype.cloneScene = function () {
         let bodies = this.bodies.slice();
-        let wip = {
-            "balls": [
-
-            ],
-            "walls": [
-
-            ],
-            "cueBalls": [
-
-            ],
-            "holes": [
-
-            ],
-            "fixedWalls": [
-
-            ]
-        };
-
-        bodies.forEach(body => {
-
-            if (body.aabb.upperBound[0] < 0 || body.aabb.lowerBound[0] > 7.2 || body.aabb.upperBound[1] < 0 || body.aabb.lowerBound[1] > 11.00) {
-                return;
-            }
-
-            let type = this.typedBodies[body.id];
-            switch (+type) {
-                case Renderer.TYPE_DEFAULT:
-                    wip.holes.push({
-                        width: parseFloat((body.aabb.upperBound[0] - body.aabb.lowerBound[0]).toFixed(2)),
-                        height: parseFloat((body.aabb.upperBound[1] - body.aabb.lowerBound[1]).toFixed(2)),
-                        x: parseFloat(((body.aabb.upperBound[0] + body.aabb.lowerBound[0]) / 2).toFixed(2)),
-                        y: parseFloat(((body.aabb.upperBound[1] + body.aabb.lowerBound[1]) / 2).toFixed(2)),
-                    });
-                    break;
-                case Renderer.TYPE_WALL:
-                case Renderer.TYPE_ATTACK_WALL:
-                case Renderer.TYPE_MOVING_WALL:
-                    let wallType = "";
-                    switch (type) {
-                        case Renderer.TYPE_ATTACK_WALL:
-                            wallType = "attack";
-                            break;
-                        case Renderer.TYPE_MOVING_WALL:
-                            wallType = "moving";
-                            break;
-                    }
-                    wip.walls.push({
-                        width: parseFloat((body.aabb.upperBound[0] - body.aabb.lowerBound[0]).toFixed(2)),
-                        height: parseFloat((body.aabb.upperBound[1] - body.aabb.lowerBound[1]).toFixed(2)),
-                        x: parseFloat(((body.aabb.upperBound[0] + body.aabb.lowerBound[0]) / 2).toFixed(2)),
-                        y: parseFloat(((body.aabb.upperBound[1] + body.aabb.lowerBound[1]) / 2).toFixed(2)),
-                        type: wallType
-                    });
-                    break;
-                case Renderer.TYPE_HERO:
-                    wip.cueBalls.push({
-                        width: parseFloat((body.aabb.upperBound[0] - body.aabb.lowerBound[0]).toFixed(2)),
-                        height: parseFloat((body.aabb.upperBound[1] - body.aabb.lowerBound[1]).toFixed(2)),
-                        x: parseFloat(((body.aabb.upperBound[0] + body.aabb.lowerBound[0]) / 2).toFixed(2)),
-                        y: parseFloat(((body.aabb.upperBound[1] + body.aabb.lowerBound[1]) / 2).toFixed(2)),
-                        type: "hero"
-                    });
-                    break;
-                case Renderer.TYPE_ENEMY:
-                    wip.balls.push({
-                        width: parseFloat((body.aabb.upperBound[0] - body.aabb.lowerBound[0]).toFixed(2)),
-                        height: parseFloat((body.aabb.upperBound[1] - body.aabb.lowerBound[1]).toFixed(2)),
-                        x: parseFloat(((body.aabb.upperBound[0] + body.aabb.lowerBound[0]) / 2).toFixed(2)),
-                        y: parseFloat(((body.aabb.upperBound[1] + body.aabb.lowerBound[1]) / 2).toFixed(2)),
-                        type: "enemy"
-                    });
-                    break;
-                default:
-                    wip.fixedWalls.push({
-                        width: parseFloat((body.aabb.upperBound[0] - body.aabb.lowerBound[0]).toFixed(2)),
-                        height: parseFloat((body.aabb.upperBound[1] - body.aabb.lowerBound[1]).toFixed(2)),
-                        x: parseFloat(((body.aabb.upperBound[0] + body.aabb.lowerBound[0]) / 2).toFixed(2)),
-                        y: parseFloat(((body.aabb.upperBound[1] + body.aabb.lowerBound[1]) / 2).toFixed(2)),
-                    });
-                    break;
-            }
-        });
         let currentIndexBeforeInsert = _(this.scenes).keys().value().length;
         let sceneName = `scene${currentIndexBeforeInsert + 1}`;
-        localStorage.setItem(sceneName, JSON.stringify(wip));
 
         this.scenes[sceneName] = {
             setup: () => {
@@ -16165,7 +16084,7 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
 
             let type = this.typedBodies[body.id];
             switch (+type) {
-                case Renderer.TYPE_DEFAULT:
+                case Renderer.TYPE_HOLE:
                     wip.holes.push({
                         width: parseFloat((body.aabb.upperBound[0] - body.aabb.lowerBound[0]).toFixed(2)),
                         height: parseFloat((body.aabb.upperBound[1] - body.aabb.lowerBound[1]).toFixed(2)),
@@ -16174,45 +16093,26 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
                         bodyType: type,
                     });
                     break;
-                case Renderer.TYPE_WALL:
+                case Renderer.TYPE_STATIC_WALL:
                 case Renderer.TYPE_ATTACK_WALL:
                 case Renderer.TYPE_MOVING_WALL:
-                    let wallType = "";
-                    switch (type) {
-                        case Renderer.TYPE_ATTACK_WALL:
-                            wallType = "attack";
-                            break;
-                        case Renderer.TYPE_MOVING_WALL:
-                            wallType = "moving";
-                            break;
-                    }
                     wip.walls.push({
                         width: parseFloat((body.shapes[0].radius || body.shapes[0].width).toFixed(2)),
                         height: parseFloat((body.shapes[0].radius || body.shapes[0].height).toFixed(2)),
                         x: parseFloat(body.position[0].toFixed(2)),
                         y: parseFloat(body.position[1].toFixed(2)),
                         angle: parseFloat(body.angle),
-                        type: wallType,
                         bodyType: type,
                     });
                     break;
                 case Renderer.TYPE_HERO:
-                    wip.cueBalls.push({
-                        width: parseFloat((body.aabb.upperBound[0] - body.aabb.lowerBound[0]).toFixed(2)),
-                        height: parseFloat((body.aabb.upperBound[1] - body.aabb.lowerBound[1]).toFixed(2)),
-                        x: parseFloat(((body.aabb.upperBound[0] + body.aabb.lowerBound[0]) / 2).toFixed(2)),
-                        y: parseFloat(((body.aabb.upperBound[1] + body.aabb.lowerBound[1]) / 2).toFixed(2)),
-                        type: "hero",
-                        bodyType: type,
-                    });
-                    break;
                 case Renderer.TYPE_ENEMY:
+                case Renderer.TYPE_MASS:
                     wip.balls.push({
                         width: parseFloat((body.aabb.upperBound[0] - body.aabb.lowerBound[0]).toFixed(2)),
                         height: parseFloat((body.aabb.upperBound[1] - body.aabb.lowerBound[1]).toFixed(2)),
                         x: parseFloat(((body.aabb.upperBound[0] + body.aabb.lowerBound[0]) / 2).toFixed(2)),
                         y: parseFloat(((body.aabb.upperBound[1] + body.aabb.lowerBound[1]) / 2).toFixed(2)),
-                        type: "enemy",
                         bodyType: type,
                     });
                     break;
@@ -16257,7 +16157,7 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
         });
     };
 
-    Renderer.prototype.removeScene = function() {
+    Renderer.prototype.removeScene = function () {
         let sceneName = this.settings.scene;
 
         let token = localStorage.getItem("token");
