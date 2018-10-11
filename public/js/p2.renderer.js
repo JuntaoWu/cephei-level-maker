@@ -15861,7 +15861,10 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
 
         var settings = this.settings;
 
-        gui.add(settings, 'scene');
+        gui.add(settings, 'scene').onChange(function (scene) {
+            console.log(scene, that.settings.scene);
+            //that.settings.scene = scene;
+        });
 
         gui.add(settings, 'tool', Renderer.toolStateMap).onChange(function (state) {
             that.setState(parseInt(state));
