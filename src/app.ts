@@ -26,6 +26,15 @@ app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
+
+app.use(express.static(path.join(__dirname, '../miniGame'), {
+  setHeaders: function (res, path) {
+    if (path.indexOf("sw.js") !== -1 || path.indexOf("manifest.json") != -1 || path.indexOf("index.html") != -1) {
+      res.setHeader("Cache-Control", "no-cache");
+    }
+  }
+}), cors());
+
 app.use(express.static(path.join(__dirname, '../public'), {
   setHeaders: function (res, path) {
     if (path.indexOf("sw.js") !== -1 || path.indexOf("manifest.json") != -1 || path.indexOf("index.html") != -1) {
@@ -33,6 +42,7 @@ app.use(express.static(path.join(__dirname, '../public'), {
     }
   }
 }), cors());
+
 app.use(express.static(path.join(__dirname, '../public/sw.js'), {
   etag: false
 }), cors());
