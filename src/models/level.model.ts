@@ -15,6 +15,8 @@ class GameObjectInfo {
  */
 export class Level extends Typegoose {
   @prop()
+  public name?: String;
+  @prop()
   public balls?: Array<GameObjectInfo>;
   @prop()
   public walls?: Array<GameObjectInfo>;

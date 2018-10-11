@@ -15608,8 +15608,7 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
             clone: function () {
                 let currentIndexBeforeInsert = _(that.scenes).keys().value().length;
                 that.cloneScene();
-                let currentIndex = _(that.scenes).keys().value().length;
-                let sceneName = `scene${currentIndex}`;
+                let sceneName = `scene${currentIndexBeforeInsert}`;
                 let guiLabel = sceneName;
                 that.settings[guiLabel] = function () {
                     that.setScene(that.scenes[sceneName], sceneName);
@@ -15769,10 +15768,11 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
             let data = res.data || [];
             data.forEach((scene, index) => {
 
-                let sceneName = `scene${index + 2}`;
+                let sceneName = scene.name || `scene${index + 1}`;
 
                 this.scenes[sceneName] = {
                     id: scene._id,
+                    name: sceneName,
                     setup: () => {
                         that.scenes.default && that.scenes.default.setup && that.scenes.default.setup.call(that);
                         ((scene.balls || []).concat(scene.holes || [])).forEach(ball => {
@@ -15988,7 +15988,7 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
         sceneFolder.open();
 
         // Add scenes
-        var i = 1;
+        var i = 0;
         for (var sceneName in this.scenes) {
             var guiLabel = sceneName + ' [' + (i++) + ']';
             this.settings[guiLabel] = function () {
@@ -16046,7 +16046,7 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
     Renderer.prototype.cloneScene = function () {
         let bodies = this.bodies.slice();
         let currentIndexBeforeInsert = _(this.scenes).keys().value().length;
-        let sceneName = `scene${currentIndexBeforeInsert + 1}`;
+        let sceneName = `scene${currentIndexBeforeInsert}`;
 
         this.scenes[sceneName] = {
             setup: () => {
@@ -16062,6 +16062,7 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
     Renderer.prototype.saveScene = function () {
         let bodies = this.bodies.slice();
         let wip = {
+            "name": "",
             "balls": [
 
             ],
@@ -16130,11 +16131,20 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
                     break;
             }
         });
-        let sceneName = this.settings.scene;
-        localStorage.setItem(sceneName, JSON.stringify(wip));
+        let sceneName = _(this.scenes).find(scene => scene.id == this.currentSceneId) && _(this.scenes).find(scene => scene.id == this.currentSceneId).name;
+        let newSceneName = this.settings.scene;
 
-        this.scenes[sceneName] = {
-            id: this.scenes[sceneName] && this.scenes[sceneName].id,
+        wip.name = newSceneName;
+
+        localStorage.setItem(newSceneName, JSON.stringify(wip));
+
+        if(sceneName != newSceneName) {
+            delete this.scenes[sceneName];
+        }
+
+        this.scenes[newSceneName] = {
+            id: this.currentSceneId,
+            name: newSceneName,
             setup: () => {
                 this.scenes.default && this.scenes.default.setup && this.scenes.default.setup.call(this);
                 bodies.forEach(body => {
@@ -16147,7 +16157,7 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
         let token = localStorage.getItem("token");
 
         $.ajax({
-            url: `/level/?token=${token}&id=${this.scenes[sceneName] && this.scenes[sceneName].id || ""}`,
+            url: `/level/?token=${token}&id=${this.currentSceneId || ""}`,
             method: 'POST',
             data: wip
         }).then(res => {
@@ -16156,7 +16166,8 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
                 return;
             }
             console.log(res.message);
-            this.scenes[sceneName].id = res.data._id;
+            this.currentSceneId = res.data._id;
+            this.scenes[newSceneName].id = res.data._id;
         });
     };
 
@@ -16242,6 +16253,8 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
         settings.gravityY = this.world.gravity[1];
         settings.sleepMode = this.world.sleepMode;
         settings.scene = name || settings.scene;
+
+        this.currentSceneId = this.scenes[settings.scene].id;
         this.updateGUI();
     };
 
@@ -16307,6 +16320,7 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
                 case "Q": // set default
                     that.setState(Renderer.DEFAULT);
                     break;
+                case "0":
                 case "1":
                 case "2":
                 case "3":
@@ -16316,7 +16330,7 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
                 case "7":
                 case "8":
                 case "9":
-                    that.setSceneByIndex(parseInt(ch) - 1);
+                    that.setSceneByIndex(parseInt(ch));
                     break;
                 default:
                     Renderer.keydownEvent.keyCode = e.keyCode;

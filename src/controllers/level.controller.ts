@@ -35,7 +35,7 @@ export let list = async (req, res, next) => {
         }
         let levels = await LevelModel.find({
             createdBy: user.username
-        });
+        }).sort({ name: 1 });
         return res.json({
             error: false,
             message: "OK",
@@ -66,7 +66,7 @@ export let json = async (req, res, next) => {
         }
         let levels = await LevelModel.find({
             createdBy: user.username
-        });
+        }).sort({ "name": 1 });
         return res.json(levels);
     }
     catch (ex) {
@@ -86,6 +86,7 @@ export let create = async (req, res, next) => {
     try {
         if (req.query.id) {
             let level = await LevelModel.findById(req.query.id);
+            level.name = req.body.name;
             level.balls = req.body.balls;
             level.holes = req.body.holes;
             level.walls = req.body.walls;

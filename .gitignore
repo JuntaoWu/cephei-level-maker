@@ -68,3 +68,7 @@ typings/
 .serverless
 
 dist/
+
+resource/
+
+miniGame/
