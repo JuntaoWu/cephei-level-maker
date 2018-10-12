@@ -15579,6 +15579,7 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
             scene: 'default',
             tool: Renderer.DEFAULT,
             type: Renderer.TYPE_HOLE,
+            bodyTypeName: '',
             fullscreen: function () {
                 var el = document.body;
                 var requestFullscreen = el.requestFullscreen || el.msRequestFullscreen || el.mozRequestFullScreen || el.webkitRequestFullscreen;
@@ -15591,6 +15592,7 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
             'manualStep [s]': function () { that.world.step(that.world.lastTimeStep); },
             width: 10,
             height: 10,
+            movingOffset: 50,
             fps: 60,
             maxSubSteps: 3,
             gravityX: 0,
@@ -15682,6 +15684,10 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
     Renderer.TYPE_ENEMY = 5;
     Renderer.TYPE_HERO = 6;
     Renderer.TYPE_MASS = 7;
+    Renderer.TYPE_MOVING_WALL_V = 8;
+    Renderer.TYPE_ATTACK_MOVING_WALL = 9;
+    Renderer.TYPE_ATTACK_MOVING_WALL_V = 10;
+    Renderer.TYPE_STAR = 11;
 
     Renderer.typeStateMap = {
         'hole': Renderer.TYPE_HOLE,
@@ -15691,6 +15697,10 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
         'enemy': Renderer.TYPE_ENEMY,
         'hero': Renderer.TYPE_HERO,
         'mass': Renderer.TYPE_MASS,
+        'moving wall-v': Renderer.TYPE_MOVING_WALL_V,
+        'attack moving wall': Renderer.TYPE_ATTACK_MOVING_WALL,
+        'attack moving wall-v': Renderer.TYPE_ATTACK_MOVING_WALL_V,
+        'star': Renderer.TYPE_STAR,
     };
     Renderer.stateTypeMap = {};
     for (var key in Renderer.typeStateMap) {
@@ -15775,10 +15785,13 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
                     name: sceneName,
                     setup: () => {
                         that.scenes.default && that.scenes.default.setup && that.scenes.default.setup.call(that);
-                        ((scene.balls || []).concat(scene.holes || [])).forEach(ball => {
+                        ((scene.balls || []).concat(scene.holes || []).concat(scene.stars || [])).forEach(ball => {
                             let b = new p2.Body({ mass: 1, position: [parseFloat(ball.x), parseFloat(ball.y)], fixedRotation: true });
                             var circle = new p2.Circle({ radius: parseFloat(ball.width) / 2 });
                             b.addShape(circle);
+                            circle.collisionGroup = 2;
+                            circle.collisionMask = 1;
+
                             that.world.addBody(b);
                             that.typedBodies[b.id] = ball.bodyType;
                         });
@@ -15790,6 +15803,21 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
                             var rectangleShape = new p2.Box({ width: parseFloat(wall.width), height: parseFloat(wall.height) });
                             b.angle = parseFloat(wall.angle);
                             b.addShape(rectangleShape);
+                            rectangleShape.collisionGroup = 2;
+                            rectangleShape.collisionMask = 1;
+
+                            if (wall.bodyType == Renderer.TYPE_MOVING_WALL || wall.bodyType == Renderer.TYPE_ATTACK_MOVING_WALL) {
+                                let shape = new p2.Box({ width: parseFloat(wall.width) + parseFloat((wall.offset || 1)), height: parseFloat(wall.height) });
+                                b.addShape(shape);
+                                shape.collisionMask = 0;
+                            }
+        
+                            if (wall.bodyType == Renderer.TYPE_MOVING_WALL_V || wall.bodyType == Renderer.TYPE_ATTACK_MOVING_WALL_V) {
+                                let shape = new p2.Box({ width: parseFloat(wall.width), height: parseFloat(wall.height) + parseFloat(wall.offset || 1) });
+                                b.addShape(shape);
+                                shape.collisionMask = 0;
+                            }
+
                             that.world.addBody(b);
                             that.typedBodies[b.id] = wall.bodyType;
                         });
@@ -15877,6 +15905,7 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
         //Current Folder
         var currentFolder = gui.addFolder('current');
         currentFolder.open();
+        currentFolder.add(settings, 'bodyTypeName');
         currentFolder.add(settings, 'width', 10, 300).step(10).onChange(function (width) {
             if (that.currentBody) {
                 console.log(that.currentBody.shapes[0].radius, that.currentBody.shapes[0].width, that.currentBody.shapes[0].height);
@@ -15888,10 +15917,10 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
                 else {
                     that.currentBody.shapes[0].width = width / 100;
                     var verts = [
-                        p2.vec2.fromValues(-width / 2 / 100, -that.currentBody.shapes[0].height / 2),
-                        p2.vec2.fromValues(width / 2 / 100, -that.currentBody.shapes[0].height / 2),
-                        p2.vec2.fromValues(width / 2 / 100, that.currentBody.shapes[0].height / 2),
-                        p2.vec2.fromValues(-width / 2 / 100, that.currentBody.shapes[0].height / 2)
+                        p2.vec2.fromValues(-that.currentBody.shapes[0].width / 2, -that.currentBody.shapes[0].height / 2),
+                        p2.vec2.fromValues(that.currentBody.shapes[0].width / 2, -that.currentBody.shapes[0].height / 2),
+                        p2.vec2.fromValues(that.currentBody.shapes[0].width / 2, that.currentBody.shapes[0].height / 2),
+                        p2.vec2.fromValues(-that.currentBody.shapes[0].width / 2, that.currentBody.shapes[0].height / 2)
                     ];
                     that.currentBody.shapes[0].vertices = verts;
                 }
@@ -15919,6 +15948,37 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
                     ];
                     that.currentBody.shapes[0].vertices = verts;
                 }
+                that.currentBody.aabbNeedsUpdate = true;
+                that.currentBody.updateAABB();
+                that.currentBody.sleepState = that.currentBody.sleepState == p2.Body.SLEEPING ? 0 : p2.Body.SLEEPING;
+            }
+        });
+        currentFolder.add(settings, 'movingOffset', 10, 200).step(10).onChange(function (offset) {
+            if (that.currentBody && that.currentBody.shapes.length == 2) {
+                console.log(that.currentBody.shapes[0].radius, that.currentBody.shapes[0].width, that.currentBody.shapes[0].height);
+                console.log(that.currentBody.aabb);
+
+                let type = that.typedBodies[that.currentBody.id];
+
+                switch (+type) {
+                    case Renderer.TYPE_MOVING_WALL:
+                    case Renderer.TYPE_ATTACK_MOVING_WALL:
+                        that.currentBody.shapes[1].width = that.currentBody.shapes[0].width + offset / 100 * 2;
+                        break;
+                    case Renderer.TYPE_MOVING_WALL_V:
+                    case Renderer.TYPE_ATTACK_MOVING_WALL_V:
+                        that.currentBody.shapes[1].height = that.currentBody.shapes[0].height + offset / 100 * 2;
+                        break;
+                }
+
+                var verts = [
+                    p2.vec2.fromValues(-that.currentBody.shapes[1].width / 2, -that.currentBody.shapes[1].height / 2),
+                    p2.vec2.fromValues(that.currentBody.shapes[1].width / 2, that.currentBody.shapes[1].height / 2),
+                    p2.vec2.fromValues(that.currentBody.shapes[1].width / 2, that.currentBody.shapes[1].height / 2),
+                    p2.vec2.fromValues(-that.currentBody.shapes[1].width / 2, -that.currentBody.shapes[1].height / 2)
+                ];
+                that.currentBody.shapes[1].vertices = verts;
+
                 that.currentBody.aabbNeedsUpdate = true;
                 that.currentBody.updateAABB();
                 that.currentBody.sleepState = that.currentBody.sleepState == p2.Body.SLEEPING ? 0 : p2.Body.SLEEPING;
@@ -16063,21 +16123,12 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
         let bodies = this.bodies.slice();
         let wip = {
             "name": "",
-            "balls": [
-
-            ],
-            "walls": [
-
-            ],
-            "cueBalls": [
-
-            ],
-            "holes": [
-
-            ],
-            "fixedWalls": [
-
-            ]
+            "balls": [],
+            "walls": [],
+            "cueBalls": [],
+            "holes": [],
+            "stars": [],
+            "fixedWalls": []
         };
 
         bodies.forEach(body => {
@@ -16100,12 +16151,16 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
                 case Renderer.TYPE_STATIC_WALL:
                 case Renderer.TYPE_ATTACK_WALL:
                 case Renderer.TYPE_MOVING_WALL:
+                case Renderer.TYPE_MOVING_WALL_V:
+                case Renderer.TYPE_ATTACK_MOVING_WALL:
+                case Renderer.TYPE_ATTACK_MOVING_WALL_V:
                     wip.walls.push({
                         width: parseFloat((body.shapes[0].radius || body.shapes[0].width).toFixed(2)),
                         height: parseFloat((body.shapes[0].radius || body.shapes[0].height).toFixed(2)),
                         x: parseFloat(body.position[0].toFixed(2)),
                         y: parseFloat(body.position[1].toFixed(2)),
                         angle: parseFloat(body.angle),
+                        offset: body.shapes.length == 2 && parseFloat((body.shapes[1].width - body.shapes[0].width) || (body.shapes[1].height - body.shapes[0].height)),
                         bodyType: type,
                     });
                     break;
@@ -16120,6 +16175,14 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
                         bodyType: type,
                     });
                     break;
+                case Renderer.TYPE_STAR:
+                    wip.stars.push({
+                        width: parseFloat((body.aabb.upperBound[0] - body.aabb.lowerBound[0]).toFixed(2)),
+                        height: parseFloat((body.aabb.upperBound[1] - body.aabb.lowerBound[1]).toFixed(2)),
+                        x: parseFloat(((body.aabb.upperBound[0] + body.aabb.lowerBound[0]) / 2).toFixed(2)),
+                        y: parseFloat(((body.aabb.upperBound[1] + body.aabb.lowerBound[1]) / 2).toFixed(2)),
+                        bodyType: type,
+                    })
                 default:
                     wip.fixedWalls.push({
                         width: parseFloat((body.aabb.upperBound[0] - body.aabb.lowerBound[0]).toFixed(2)),
@@ -16138,7 +16201,7 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
 
         localStorage.setItem(newSceneName, JSON.stringify(wip));
 
-        if(sceneName != newSceneName) {
+        if (sceneName != newSceneName) {
             delete this.scenes[sceneName];
         }
 
@@ -16430,6 +16493,7 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
                 //todo: select current object body.
                 if (b) {
                     this.currentBody = b;
+                    this.settings.bodyTypeName = Renderer.stateTypeMap[this.typedBodies[b.id]];
                     this.settings.width = b.shapes[0].radius ? b.shapes[0].radius * 2 * 100 : b.shapes[0].width * 100;
                     this.settings.height = b.shapes[0].radius ? b.shapes[0].radius * 2 * 100 : b.shapes[0].height * 100;
                     b.wakeUp();
@@ -16565,6 +16629,8 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
                     b = new p2.Body({ mass: 1, position: this.drawCircleCenter, fixedRotation: true });
                     var circle = new p2.Circle({ radius: R });
                     b.addShape(circle);
+                    circle.collisionGroup = 2;
+                    circle.collisionMask = 1;
 
                     this.world.addBody(b);
                     console.log("DRAWINGCIRCLE", b.id);
@@ -16597,9 +16663,24 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
                     });
                     var rectangleShape = new p2.Box({ width: width, height: height });
                     b.addShape(rectangleShape);
+                    rectangleShape.collisionGroup = 2;
+                    rectangleShape.collisionMask = 1;
+
                     this.world.addBody(b);
                     console.log("DRAWINGRECTANGLE", b.id);
                     this.typedBodies[b.id] = this.bodyType;
+
+                    if (this.bodyType == Renderer.TYPE_MOVING_WALL || this.bodyType == Renderer.TYPE_ATTACK_MOVING_WALL) {
+                        let shape = new p2.Box({ width: width + 1, height: height });
+                        b.addShape(shape);
+                        shape.collisionMask = 0;
+                    }
+
+                    if (this.bodyType == Renderer.TYPE_MOVING_WALL_V || this.bodyType == Renderer.TYPE_ATTACK_MOVING_WALL_V) {
+                        let shape = new p2.Box({ width: width, height: height + 1 });
+                        b.addShape(shape);
+                        shape.collisionMask = 0;
+                    }
                 }
                 p2.vec2.copy(this.drawRectEnd, this.drawRectStart);
                 this.emit(this.drawRectangleChangeEvent);
@@ -16610,8 +16691,8 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
             b.wakeUp();
             for (var i = 0; i < b.shapes.length; i++) {
                 var s = b.shapes[i];
-                s.collisionMask = this.newShapeCollisionMask;
-                s.collisionGroup = this.newShapeCollisionGroup;
+                //s.collisionMask = this.newShapeCollisionMask;
+                //s.collisionGroup = this.newShapeCollisionGroup;
             }
         }
     };

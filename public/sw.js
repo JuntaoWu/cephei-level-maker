@@ -21,7 +21,7 @@ importScripts("https://storage.googleapis.com/workbox-cdn/releases/3.4.1/workbox
 self.__precacheManifest = [
   {
     "url": "editor.html",
-    "revision": "0a375f67389caecc408e4513bcaa8bb6"
+    "revision": "7ab6ad58bd97bc726c90f3f6445c2515"
   },
   {
     "url": "js/dat.gui.js",
@@ -41,7 +41,7 @@ self.__precacheManifest = [
   },
   {
     "url": "js/p2.renderer.js",
-    "revision": "da8b351ea17b7d3e47794dd5eef40c38"
+    "revision": "eb428e48b8ead5a699b1dbcde44ccecc"
   },
   {
     "url": "js/pixi.js",

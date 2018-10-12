@@ -41,6 +41,8 @@
                 position: [3.6, 0.3],
             });
             upOneWall.addShape(e);
+            e.collisionGroup = 1;
+            e.collisionMask = 2;
             world.addBody(upOneWall);
 
             var a = new p2.Box({
@@ -52,6 +54,8 @@
                 position: [3.6, 10.70]
             });
             downOneWall.addShape(a);
+            a.collisionGroup = 1;
+            a.collisionMask = 2;
             world.addBody(downOneWall);
 
             //leftWall
@@ -65,6 +69,8 @@
             });
             leftWall.displays = [];
             leftWall.addShape(n);
+            n.collisionGroup = 1;
+            n.collisionMask = 2;
             this.world.addBody(leftWall);
 
             var d = new p2.Box({
@@ -76,6 +82,8 @@
                 position: [7.0, 11.00 / 2]
             });
             rightWall.addShape(d);
+            d.collisionGroup = 1;
+            d.collisionMask = 2;
             this.world.addBody(rightWall);
 
             var wallShape = new p2.Box({
