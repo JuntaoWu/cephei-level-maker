@@ -24,6 +24,8 @@ export class Level extends Typegoose {
   @prop()
   public holes?: Array<GameObjectInfo>;
   @prop()
+  public stars?: Array<GameObjectInfo>;
+  @prop()
   public createdBy?: String;
 }
 

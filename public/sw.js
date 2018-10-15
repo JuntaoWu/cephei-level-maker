@@ -41,7 +41,7 @@ self.__precacheManifest = [
   },
   {
     "url": "js/p2.renderer.js",
-    "revision": "eb428e48b8ead5a699b1dbcde44ccecc"
+    "revision": "a67e4c6f2f4c13c667f63e866b6b2c2c"
   },
   {
     "url": "js/pixi.js",

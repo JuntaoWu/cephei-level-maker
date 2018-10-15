@@ -90,6 +90,7 @@ export let create = async (req, res, next) => {
             level.balls = req.body.balls;
             level.holes = req.body.holes;
             level.walls = req.body.walls;
+            level.stars = req.body.stars;
             let savedLevel = await level.save();
             return res.json({
                 error: false,
