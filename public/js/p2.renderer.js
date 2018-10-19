@@ -15533,6 +15533,7 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
         this.bodyType = Renderer.TYPE_HOLE;
 
         this.typedBodies = {};
+        this.hpBodies = {};
 
         // Bodies to draw
         this.bodies = [];
@@ -15593,6 +15594,7 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
             width: 10,
             height: 10,
             movingOffset: 50,
+            hp: 0,
             fps: 60,
             maxSubSteps: 3,
             gravityX: 0,
@@ -15794,6 +15796,10 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
 
                             that.world.addBody(b);
                             that.typedBodies[b.id] = ball.bodyType;
+
+                            if(ball.hp) {
+                                that.hpBodies[b.id] = ball.hp;
+                            }
                         });
                         (scene.walls || []).forEach(wall => {
                             let b = new p2.Body({
@@ -15811,7 +15817,7 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
                                 b.addShape(shape);
                                 shape.collisionMask = 0;
                             }
-        
+
                             if (wall.bodyType == Renderer.TYPE_MOVING_WALL_V || wall.bodyType == Renderer.TYPE_ATTACK_MOVING_WALL_V) {
                                 let shape = new p2.Box({ width: parseFloat(wall.width), height: parseFloat(wall.height) + parseFloat(wall.offset || 1) });
                                 b.addShape(shape);
@@ -15982,6 +15988,19 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
                 that.currentBody.aabbNeedsUpdate = true;
                 that.currentBody.updateAABB();
                 that.currentBody.sleepState = that.currentBody.sleepState == p2.Body.SLEEPING ? 0 : p2.Body.SLEEPING;
+            }
+        });
+        currentFolder.add(settings, 'hp', 0, 20).step(1).onChange(function (hp) {
+            if (that.currentBody) {
+                let type = that.typedBodies[that.currentBody.id];
+
+                switch (+type) {
+                    case Renderer.TYPE_ENEMY:
+                    case Renderer.TYPE_HERO:
+                    case Renderer.TYPE_MASS:
+                        that.hpBodies[that.currentBody.id] = hp;
+                        break;
+                }
             }
         });
 
@@ -16173,6 +16192,7 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
                         x: parseFloat(((body.aabb.upperBound[0] + body.aabb.lowerBound[0]) / 2).toFixed(2)),
                         y: parseFloat(((body.aabb.upperBound[1] + body.aabb.lowerBound[1]) / 2).toFixed(2)),
                         bodyType: type,
+                        hp: this.hpBodies[body.id] || 3
                     });
                     break;
                 case Renderer.TYPE_STAR:
@@ -16494,6 +16514,7 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
                 if (b) {
                     this.currentBody = b;
                     this.settings.bodyTypeName = Renderer.stateTypeMap[this.typedBodies[b.id]];
+                    this.settings.hp = this.hpBodies[b.id] || 0;
                     this.settings.width = b.shapes[0].radius ? b.shapes[0].radius * 2 * 100 : b.shapes[0].width * 100;
                     this.settings.height = b.shapes[0].radius ? b.shapes[0].radius * 2 * 100 : b.shapes[0].height * 100;
                     b.wakeUp();

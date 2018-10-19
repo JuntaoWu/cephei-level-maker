@@ -9,6 +9,7 @@ class GameObjectInfo {
     public bodyType: number;
     public angle: number;
     public offset: number;
+    public hp: number;
 }
 
 /**
