@@ -1,6 +1,12 @@
 import { prop, Typegoose, ModelType, InstanceType } from 'typegoose';
 import { ObjectID } from 'bson';
 
+class Answer {
+  public time: number;
+  public x: number;
+  public y: number;
+}
+
 class GameObjectInfo {
     public width: number;
     public height: number;
@@ -16,6 +22,8 @@ class GameObjectInfo {
  * Level Schema
  */
 export class Level extends Typegoose {
+  @prop()
+  public answer?: Answer;
   @prop()
   public name?: String;
   @prop()

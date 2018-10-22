@@ -125,6 +125,34 @@ export let create = async (req, res, next) => {
     }
 };
 
+export let updateAnswer = async (req, res, next) => {
+    try {
+        if (req.query.id) {
+            let level = await LevelModel.findById(req.query.id);
+            level.answer = req.body.answer;
+            let savedLevel = await level.save();
+            return res.json({
+                error: false,
+                message: "OK",
+                data: savedLevel
+            });
+        }
+        else {
+            return res.json({
+                error: true,
+                message: "No valid id provided"
+            });
+        }
+    }
+    catch (ex) {
+        console.error(ex);
+        return res.json({
+            error: true,
+            message: ex && ex.message || ex
+        });
+    }
+};
+
 /**
  * Returns jwt token if valid username and password is provided
  * @param req
@@ -158,4 +186,4 @@ export let remove = async (req, res, next) => {
     }
 };
 
-export default { list, create, remove, json };
+export default { list, create, remove, json, updateAnswer };

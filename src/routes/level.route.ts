@@ -13,4 +13,7 @@ router.route('/')
     .post(passport.authenticate("jwt"), levelCtrl.create)
     .delete(passport.authenticate("jwt"), levelCtrl.remove);
 
+router.route('/updateAnswer')
+    .post(passport.authenticate("jwt"), levelCtrl.updateAnswer);
+
 export default router;
