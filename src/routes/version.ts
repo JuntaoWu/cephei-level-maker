@@ -15,7 +15,7 @@ router.route('/check')
         var request = https.request({
             hostname: "dashboard.hzsdgames.com",
             port: 8088,
-            path: `/version/check?appName=cephei-antiques-play&version=${req.query.version || 0}`,
+            path: `/version/check?appName=cephei-level-maker&version=${req.query.version || 0}`,
             method: "GET",
         }, (cepheiRes) => {
             console.log("response from dashboard api.");
