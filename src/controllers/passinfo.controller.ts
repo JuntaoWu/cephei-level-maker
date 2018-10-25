@@ -80,7 +80,7 @@ export let update = async (req, res, next) => {
             });
         }
 
-        let passInfo = await PassInfoModel.findOne(req.query.openId);
+        let passInfo = await PassInfoModel.findOne({ openId: req.query.openId });
 
         if (!passInfo) {
             passInfo = new PassInfoModel({
