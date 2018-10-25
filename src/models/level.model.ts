@@ -16,6 +16,7 @@ class GameObjectInfo {
     public angle: number;
     public offset: number;
     public hp: number;
+    public speed: number;
 }
 
 /**

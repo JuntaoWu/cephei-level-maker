@@ -15534,6 +15534,8 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
 
         this.typedBodies = {};
         this.hpBodies = {};
+        this.speedBodies = {};
+        this.reverseDirectionBodies = {};
 
         // Bodies to draw
         this.bodies = [];
@@ -15595,6 +15597,8 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
             height: 10,
             movingOffset: 50,
             hp: 0,
+            speed: 20,
+            reverseDirection: false,
             fps: 60,
             maxSubSteps: 3,
             gravityX: 0,
@@ -15797,7 +15801,7 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
                             that.world.addBody(b);
                             that.typedBodies[b.id] = ball.bodyType;
 
-                            if(ball.hp) {
+                            if (ball.hp) {
                                 that.hpBodies[b.id] = ball.hp;
                             }
                         });
@@ -15826,6 +15830,13 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
 
                             that.world.addBody(b);
                             that.typedBodies[b.id] = wall.bodyType;
+
+                            if (wall.speed) {
+                                that.speedBodies[b.id] = wall.speed;
+                            }
+                            if (wall.reverseDirection) {
+                                that.reverseDirectionBodies[b.id] = wall.reverseDirection;
+                            }
                         });
                     }
                 };
@@ -15999,6 +16010,36 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
                     case Renderer.TYPE_HERO:
                     case Renderer.TYPE_MASS:
                         that.hpBodies[that.currentBody.id] = hp;
+                        break;
+                }
+            }
+        });
+
+        currentFolder.add(settings, 'speed', 0, 40).step(5).onChange(function (speed) {
+            if (that.currentBody) {
+                let type = that.typedBodies[that.currentBody.id];
+
+                switch (+type) {
+                    case Renderer.TYPE_MOVING_WALL:
+                    case Renderer.TYPE_MOVING_WALL_V:
+                    case Renderer.TYPE_ATTACK_MOVING_WALL:
+                    case Renderer.TYPE_ATTACK_MOVING_WALL_V:
+                        that.speedBodies[that.currentBody.id] = speed;
+                        break;
+                }
+            }
+        });
+
+        currentFolder.add(settings, 'reverseDirection').onChange(function (r) {
+            if (that.currentBody) {
+                let type = that.typedBodies[that.currentBody.id];
+
+                switch (+type) {
+                    case Renderer.TYPE_MOVING_WALL:
+                    case Renderer.TYPE_MOVING_WALL_V:
+                    case Renderer.TYPE_ATTACK_MOVING_WALL:
+                    case Renderer.TYPE_ATTACK_MOVING_WALL_V:
+                        that.reverseDirectionBodies[that.currentBody.id] = r;
                         break;
                 }
             }
@@ -16180,6 +16221,8 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
                         y: parseFloat(body.position[1].toFixed(2)),
                         angle: parseFloat(body.angle),
                         offset: body.shapes.length == 2 && parseFloat((body.shapes[1].width - body.shapes[0].width) || (body.shapes[1].height - body.shapes[0].height)),
+                        speed: this.speedBodies[body.id] || 20,
+                        reverseDirection: this.reverseDirectionBodies[body.id],
                         bodyType: type,
                     });
                     break;
@@ -16242,7 +16285,8 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
         $.ajax({
             url: `/level/?token=${token}&id=${this.currentSceneId || ""}`,
             method: 'POST',
-            data: wip
+            contentType: "application/json",
+            data: JSON.stringify(wip)
         }).then(res => {
             if (res.error) {
                 console.error(res.error);
@@ -16515,6 +16559,8 @@ dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, contro
                     this.currentBody = b;
                     this.settings.bodyTypeName = Renderer.stateTypeMap[this.typedBodies[b.id]];
                     this.settings.hp = this.hpBodies[b.id] || 0;
+                    this.settings.speed = this.speedBodies[b.id] || 0;
+                    this.settings.reverseDirection = this.reverseDirectionBodies[b.id];
                     this.settings.width = b.shapes[0].radius ? b.shapes[0].radius * 2 * 100 : b.shapes[0].width * 100;
                     this.settings.height = b.shapes[0].radius ? b.shapes[0].radius * 2 * 100 : b.shapes[0].height * 100;
                     b.wakeUp();
