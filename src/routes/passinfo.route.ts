@@ -9,9 +9,9 @@ import passport from 'passport';
 const router = express.Router(); // eslint-disable-line new-cap
 
 router.route('/')
-    .post(passInfoCtrl.list);
+    .post(passport.authenticate("jwtWx"), passInfoCtrl.list);
 
 router.route('/update')
-    .post(passInfoCtrl.update);
+    .post(passport.authenticate("jwtWx"), passInfoCtrl.update);
 
 export default router;

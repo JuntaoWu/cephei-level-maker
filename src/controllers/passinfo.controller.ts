@@ -16,6 +16,9 @@ import * as path from 'path';
 
 import * as uuid from 'uuid';
 import PassInfoModel, { PassInfo } from '../models/passinfo.model';
+import WxUserModel from '../models/wxuser.model';
+
+import wxuserCtrl from './wxusers.controller';
 
 /**
  * Returns jwt token if valid username and password is provided
@@ -26,7 +29,7 @@ import PassInfoModel, { PassInfo } from '../models/passinfo.model';
  */
 export let list = async (req, res, next) => {
     try {
-        var openId = req.query.openId;
+        var openId = req.user.openId || req.query.openId;
 
         if (!openId) {
             return res.json({
@@ -34,6 +37,26 @@ export let list = async (req, res, next) => {
                 message: "Please login to use passInfo",
             });
         }
+
+        await WxUserModel.findOneAndUpdate({ openId: openId },
+            {
+                $set: {
+                    avatarUrl: req.body.avatarUrl,
+                    city: req.body.city,
+                    country: req.body.country,
+                    gender: req.body.gender,
+                    language: req.body.language,
+                    nickName: req.body.nickName,
+                    province: req.body.province,
+                },
+                $inc: {
+                    __v: 1,
+                }
+            },
+            {
+                new: true,
+                maxTimeMS: 5000
+            });
 
         let passInfo = await PassInfoModel.findOne({
             openId: openId
@@ -71,7 +94,7 @@ export let list = async (req, res, next) => {
  */
 export let update = async (req, res, next) => {
     try {
-        const openId = req.query.openId;
+        const openId = req.user.openId || req.query.openId;
 
         if (!openId) {
             return res.json({
@@ -95,6 +118,10 @@ export let update = async (req, res, next) => {
         }
 
         await passInfo.save();
+
+        if (req.body.passInfo) {
+            wxuserCtrl.uploadScore(req, res, next);
+        }
 
         return res.json({
             error: false,

@@ -31,6 +31,7 @@
     "fbgraph": "^1.4.1",
     "http-errors": "~1.6.2",
     "http-status": "^1.2.0",
+    "ioredis": "^4.2.0",
     "jade": "~1.11.0",
     "lodash": "^4.17.4",
     "lusca": "^1.5.2",

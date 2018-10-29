@@ -41,7 +41,9 @@ const envVarsSchema = Joi.object({
   MSSQL_PASSWORD: Joi.string().required()
     .description('MSSQL_PASSWORD'),
   MSSQL_DATABASE: Joi.string().required()
-    .description('MSSQL_DATABASE')
+    .description('MSSQL_DATABASE'),
+  REDIS_URI: Joi.string().required()
+    .description('REDIS_URI'),
 }).unknown()
   .required();
 
@@ -77,6 +79,9 @@ export const config = {
     user: envVars.MSSQL_USER,
     password: envVars.MSSQL_PASSWORD,
     database: envVars.MSSQL_DATABASE,
+  },
+  redis: {
+    uri: envVars.REDIS_URI,
   },
   rootUrl: envVars.ROOT_URI,
 };
