@@ -65,6 +65,7 @@ export let list = async (req, res, next) => {
         if (!passInfo) {
             passInfo = new PassInfoModel({
                 passInfo: [],
+                currentPower: 0,
                 openId: openId,
             });
             await passInfo.save();
@@ -107,12 +108,16 @@ export let update = async (req, res, next) => {
 
         if (!passInfo) {
             passInfo = new PassInfoModel({
+                restoredAt: new Date(),
+                currentPower: 20,
                 passInfo: [],
                 openId: openId,
             });
             await passInfo.save();
         }
         else {
+            passInfo.restoredAt = req.body.restoredAt;
+            passInfo.currentPower = req.body.currentPower;
             passInfo.passInfo = req.body.passInfo;
             await passInfo.save();
         }

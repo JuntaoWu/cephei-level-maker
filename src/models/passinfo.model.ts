@@ -14,6 +14,10 @@ export class PassInfo extends Typegoose {
     @prop()
     public passInfo?: Array<PassStar>;
     @prop()
+    public restoredAt?: Date;
+    @prop()
+    public currentPower?: Number;
+    @prop()
     public createdBy?: String;
 }
 
