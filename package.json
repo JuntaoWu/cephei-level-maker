@@ -37,6 +37,7 @@
     "lusca": "^1.5.2",
     "mongoose": "^5.2.4",
     "morgan": "~1.9.0",
+    "node-uuid": "^1.4.8",
     "nodemailer": "^4.4.1",
     "passport": "^0.4.0",
     "passport-facebook": "^2.1.1",
@@ -46,6 +47,7 @@
     "reflect-metadata": "^0.1.12",
     "request": "^2.83.0",
     "request-promise": "^4.2.2",
+    "socket.io": "^2.1.1",
     "typegoose": "^5.2.1",
     "winston": "^2.4.0"
   },
@@ -79,6 +81,7 @@
     "@types/passport-local": "^1.0.32",
     "@types/request": "^2.47.0",
     "@types/shelljs": "^0.7.8",
+    "@types/socket.io": "^1.4.38",
     "@types/supertest": "^2.0.4",
     "@types/winston": "^2.3.7",
     "typescript": "^2.9.2",
