@@ -18,3 +18,9 @@ export interface Client extends io.Socket {
 
     hosting: boolean;
 }
+
+export interface Input {
+    inputs: string[]; 
+    time: string; 
+    seq: string;
+}

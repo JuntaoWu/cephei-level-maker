@@ -1,4 +1,4 @@
-import { Game, Client } from './game';
+import { Game, Client, Input } from './game';
 import { Dictionary } from 'lodash';
 
 //The main update loop runs on requestAnimationFrame,
@@ -14,7 +14,7 @@ import { Dictionary } from 'lodash';
 var frame_time = 60 / 1000; // run the local game at 16ms/ 60hz
 if ('undefined' != typeof (global)) frame_time = 45; //on server we run at 45ms, 22hz
 
-if('undefined' == typeof (window)) var window = {} as any;
+if ('undefined' == typeof (window)) var window = {} as any;
 
 (function () {
 
@@ -54,8 +54,9 @@ export class GamePlayer {
     private cur_state = { pos: { x: 0, y: 0 } };
     private state_time = new Date().getTime();
 
-    public inputs: any[] = [];
-    public lastInputSeq: any[] = [];
+    public inputs: Input[] = [];
+    public lastInputSeq: string;
+    public lastInputTime: string;
 
     //The world bounds we are confined to
     private pos_limits = {
@@ -84,7 +85,10 @@ declare global {
     }
 }
 
-Number.prototype.fixed = (n?: number) => { n = n || 3; return parseFloat(this.toFixed(n)); };
+Number.prototype.fixed = function (n?: number) {
+    n = n || 3;
+    return parseFloat(this.toFixed(n));
+};
 
 export class GameCore {
     //Now the main game class. This gets created on
@@ -221,7 +225,7 @@ export class GameCore {
         this.dt = this.lastFrameTime ? ((t - this.lastFrameTime) / 1000.0).fixed() : 0.016;
 
         //Store the last frame time
-        this.lastFrameTime = t;
+        this.lastFrameTime = t; 
 
         //Update the game specifics
         if (!this.server) {
@@ -231,7 +235,7 @@ export class GameCore {
         }
 
         //schedule the next update
-        this.updateId = window.requestAnimationFrame(this.update);
+        this.updateId = window.requestAnimationFrame(this.update.bind(this));
     }
 
     private create_timer() {
@@ -278,7 +282,7 @@ export class GameCore {
 
     }
 
-    process_input(player) {
+    process_input(player: GamePlayer) {
 
         //It's possible to have recieved multiple inputs by now,
         //so we process each one
@@ -288,7 +292,7 @@ export class GameCore {
         if (ic) {
             for (var j = 0; j < ic; ++j) {
                 //don't process ones we already have simulated locally
-                if (player.inputs[j].seq <= player.last_input_seq) continue;
+                if (player.inputs[j].seq <= player.lastInputSeq) continue;
 
                 var input = player.inputs[j].inputs;
                 var c = input.length;
@@ -316,8 +320,8 @@ export class GameCore {
         if (player.inputs.length) {
             //we can now clear the array since these have been processed
 
-            player.last_input_time = player.inputs[ic - 1].time;
-            player.last_input_seq = player.inputs[ic - 1].seq;
+            player.lastInputTime = player.inputs[ic - 1].time;
+            player.lastInputSeq = player.inputs[ic - 1].seq;
         }
 
         //give it back
@@ -393,7 +397,7 @@ export class GameCore {
 
     }
 
-    handle_server_input(client: Client, input, input_time, input_seq) {
+    handleServerInput(client: Client, input: string[], input_time: string, input_seq: string) {
 
         //Fetch which client this refers to out of the two
         var player_client =

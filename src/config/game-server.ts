@@ -88,7 +88,7 @@ export class GameServer {
         //the client should be in a game, so
         //we can tell that game to handle the input
         if (client && client.game && client.game.core) {
-            client.game.core.handle_server_input(client, inputCommands, inputTime, inputSeq);
+            client.game.core.handleServerInput(client, inputCommands, inputTime, inputSeq);
         }
     }
 
