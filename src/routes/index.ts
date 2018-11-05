@@ -6,6 +6,7 @@ import passport from 'passport';
 import levelCtrl from '../controllers/level.controller';
 import passInfoRouter from './passinfo.route';
 import wxuserRouter from './wxuser.route';
+import captureRouter from './capture.route';
 
 /* GET home page. */
 router.get('/', function (req, res, next) {
@@ -21,5 +22,7 @@ router.use('/level.json', passport.authenticate("jwt"), levelCtrl.json);
 router.use('/passInfo', passInfoRouter);
 
 router.use('/users', wxuserRouter);
+
+router.use('/capture', captureRouter);
 
 export default router;
