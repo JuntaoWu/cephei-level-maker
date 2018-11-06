@@ -16,9 +16,13 @@ import * as path from 'path';
 
 import * as uuid from 'uuid';
 import PassInfoModel, { PassInfo } from '../models/passinfo.model';
-import WxUserModel from '../models/wxuser.model';
+import WxUserModel, { WxUser } from '../models/wxuser.model';
 
 import wxuserCtrl from './wxusers.controller';
+
+import { AES, CipherOption } from 'crypto-js';
+
+import CryptoJS from 'crypto-js';
 
 /**
  * Returns jwt token if valid username and password is provided
@@ -29,13 +33,30 @@ import wxuserCtrl from './wxusers.controller';
  */
 export let list = async (req, res, next) => {
     try {
-        var openId = req.user.openId || req.query.openId;
+
+        let user = req.user as WxUser;
+        var openId = user.openId || req.query.openId;
 
         if (!openId) {
             return res.json({
                 error: true,
                 message: "Please login to use passInfo",
             });
+        }
+
+        if (!user.unionId) {
+            let encryptedData = req.body.encryptedData  //new Buffer(req.body.encryptedData, "base64");
+            let sessionKey = CryptoJS.enc.Base64.parse(user.session_key.toString());  //new Buffer(user.session_key.toString(), "base64");
+            let iv = CryptoJS.enc.Base64.parse(req.body.iv);  //new Buffer(req.body.iv, "base64");
+            let result = AES.decrypt(encryptedData as any, sessionKey as any, {
+                iv: iv as any,
+                mode: CryptoJS.mode.CBC,
+                padding: CryptoJS.pad.Pkcs7
+            }).toString(CryptoJS.enc.Utf8);
+
+            let decryptedData = JSON.parse(result);
+
+            user.unionId = decryptedData.unionId;
         }
 
         await WxUserModel.findOneAndUpdate({ openId: openId },
@@ -48,6 +69,7 @@ export let list = async (req, res, next) => {
                     language: req.body.language,
                     nickName: req.body.nickName,
                     province: req.body.province,
+                    unionId: user.unionId,
                 },
                 $inc: {
                     __v: 1,

@@ -74,10 +74,15 @@ const localWxLogin = new LocalStrategy(localWxOptions, (username, password, done
 
                 if (!user) {
                     user = new WxUserModel({
-                        openId: openid
+                        openId: openid,
+                        session_key: session_key,
                     });
-                    await user.save();
                 }
+                else {
+                    user.session_key = session_key;
+                }
+
+                await user.save();
 
                 return done(null, user);
             }

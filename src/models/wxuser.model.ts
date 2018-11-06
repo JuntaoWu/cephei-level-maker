@@ -11,6 +11,10 @@ export class WxUser extends Typegoose {
     @prop()
     openId: String;
     @prop()
+    unionId: String;
+    @prop()
+    session_key: String;
+    @prop()
     avatarUrl?: String;
     @prop()
     city?: String;
