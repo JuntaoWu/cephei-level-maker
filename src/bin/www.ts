@@ -29,7 +29,7 @@ mongoose.Promise = Promise;
  * Get port from environment and store in Express.
  */
 
-var port = normalizePort(config.port || '9229');
+var port = normalizePort(config.port);
 app.set('port', port);
 
 // connect to mongo db
@@ -60,14 +60,14 @@ server.listen(port);
 server.on('error', onError);
 server.on('listening', onListening);
 
-// var options = {
-//   key: fs.readFileSync('/etc/letsencrypt/live/gdjzj.hzsdgames.com/privkey.pem'),
-//   cert: fs.readFileSync('/etc/letsencrypt/live/gdjzj.hzsdgames.com/fullchain.pem')
-// };
-// var sslServer = https.createServer(options, app);
-// sslServer.listen(`8084`);
-// sslServer.on('error', onError);
-// sslServer.on('listening', onListening);
+var options = {
+  key: fs.readFileSync('/etc/letsencrypt/live/gdjzj.hzsdgames.com/privkey.pem'),
+  cert: fs.readFileSync('/etc/letsencrypt/live/gdjzj.hzsdgames.com/fullchain.pem')
+};
+var sslServer = https.createServer(options, app);
+sslServer.listen(config.sslPort);
+sslServer.on('error', onError);
+sslServer.on('listening', onListening);
 
 /**
  * Normalize a port into a number, string, or false.

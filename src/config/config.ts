@@ -12,6 +12,8 @@ const envVarsSchema = Joi.object({
     .default('development'),
   SERVER_PORT: Joi.number()
     .default(4040),
+  SSL_PORT: Joi.number()
+    .default(443),
   MONGOOSE_DEBUG: Joi.boolean()
     .when('NODE_ENV', {
       is: Joi.string().equal('development'),
@@ -55,6 +57,7 @@ if (error) {
 export const config = {
   env: envVars.NODE_ENV,
   port: envVars.SERVER_PORT,
+  sslPort: envVars.SSL_PORT,
   mongooseDebug: envVars.MONGOOSE_DEBUG,
   jwtSecret: envVars.JWT_SECRET,
   mongo: {
