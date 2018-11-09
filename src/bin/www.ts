@@ -30,7 +30,6 @@ mongoose.Promise = Promise;
  */
 
 var port = normalizePort(config.port);
-app.set('port', port);
 
 // connect to mongo db
 const mongoUri = config.mongo.host;
@@ -57,17 +56,25 @@ var server = http.createServer(app);
  * Listen on provided port, on all network interfaces.
  */
 server.listen(port);
-server.on('error', onError);
-server.on('listening', onListening);
+server.on('error', (error) => {
+  onError(error, port);
+});
+server.on('listening', () => {
+  onListening(server);
+});
 
 var options = {
   key: fs.readFileSync('/etc/letsencrypt/live/gdjzj.hzsdgames.com/privkey.pem'),
   cert: fs.readFileSync('/etc/letsencrypt/live/gdjzj.hzsdgames.com/fullchain.pem')
 };
 var sslServer = https.createServer(options, app);
-sslServer.listen(config.sslPort);
-sslServer.on('error', onError);
-sslServer.on('listening', onListening);
+sslServer.listen(normalizePort(config.sslPort));
+sslServer.on('error', (error) => {
+  onError(error, config.sslPort);
+});
+sslServer.on('listening', () => {
+  onListening(sslServer);
+});
 
 /**
  * Normalize a port into a number, string, or false.
@@ -93,7 +100,7 @@ function normalizePort(val: string) {
  * Event listener for HTTP server "error" event.
  */
 
-function onError(error: any) {
+function onError(error: any, port?: any) {
   if (error.syscall !== 'listen') {
     throw error;
   }
@@ -121,7 +128,7 @@ function onError(error: any) {
  * Event listener for HTTP server "listening" event.
  */
 
-function onListening() {
+function onListening(server?: any) {
   var addr = server.address();
   var bind = typeof addr === 'string'
     ? 'pipe ' + addr
@@ -135,7 +142,7 @@ const gameServer = new GameServer();
 sio.on("listening", () => {
   console.log("listening");
 });
- 
+
 //Socket.io will call this function when a client connects,
 //So we can send that client looking for a game to play,
 //as well as give that client a unique ID to use so we can
@@ -145,7 +152,7 @@ sio.on('connection', (client: Client) => {
   //Generate a new UUID, looks something like
   //5b2ca132-64bd-4513-99da-90e838ca47d1
   //and store this on their socket/connection
-  client.userId = uuid(); 
+  client.userId = uuid();
 
   //tell the player they connected, giving them their id
   client.emit('onconnected', { id: client.userId });
